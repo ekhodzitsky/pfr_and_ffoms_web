@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Main page</title>
+</head>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<body>
+<div style="margin-top: 8%; width: 20%; margin-left: 40%">
+    <h5 style="text-align: center">Привет, дружище! Не хочешь рассчитать платежи ИП в ПФР и ФФОМС в <code>2018</code>
+        году?</h5>
+    <br>
+    <form>
+        <div class="form-group">
+            <label for="date1">Дата начала периода:</label>
+            <input type="text" class="form-control" id="date1">
+            <small id="date1help" class="form-text text-muted">Введите дату в формате dd.mm, например: 05.12
+            </small>
+        </div>
+        <div class="form-group">
+            <label for="date2">Конец периода:</label>
+            <input type="text" class="form-control" id="date2">
+            <small id="date2help" class="form-text text-muted">Введите дату в формате dd.mm, например: 05.12
+            </small>
+        </div>
+    </form>
+    <div style="text-align: center">
+        <button class="btn-light" onclick="calculate()">Рассчёт</button>
+        <div style="padding-top: 30px" id="result"></div>
+    </div>
+</div>
+
+<script>
+
+    // Basic function here:
+
+    function calculate() {
+        var first = document.getElementById('date1').value;
+        var second = document.getElementById('date2').value;
+        if (first.length !== 5 || second.length !== 5) {
+            document.getElementById('result').innerText = "Вы некорректно ввели данные.";
+        } else {
+            var p = getFullMonthNumber(first, second);
+            var fmd = getDay(first);
+            var pfr = calculatePFR(first, second);
+            var ffoms = calculateFFOMS(first, second);
+            var all = pfr + ffoms;
+            document.getElementById('result').innerText = "ПФР: " + pfr + "\n ФФОМС: " + ffoms + "\n Всего: " + all;
+        }
+    }
+
+
+    // Calculate situations for Pension fund:
+
+    function calculatePFR(date1, date2) {
+        var result;
+        var fullMonths = getFullMonthNumber(date1, date2);
+        var firstDay = getDay(date1);
+        var secondDay = getDay(date2);
+        var firstMonth = getMonth(date1);
+        var secondMonth = getMonth(date2);
+        var numDaysInFstMonth = getNumberOfDaysByMonth(firstMonth);
+        var numDaysInSndMonth = getNumberOfDaysByMonth(secondMonth);
+        if (fullMonths === 12) {
+            result = 26545;
+        } else if (firstDay === 1 && secondDay === getNumberOfDaysByMonth(secondMonth)) {
+            result = calcPFRFull(fullMonths);
+        } else if (firstDay !== 1 && secondDay === getNumberOfDaysByMonth(secondMonth)) {
+            result = calcPFROne(fullMonths, firstDay, numDaysInFstMonth);
+        } else if (firstDay === 1 && secondDay !== getNumberOfDaysByMonth(secondMonth)) {
+            result = calcPFRTwo(fullMonths, secondDay, numDaysInSndMonth);
+        } else if (firstDay !== 1 && secondDay !== getNumberOfDaysByMonth(secondMonth)
+            || getFullMonthNumber(date1, date2) === 0) {
+            result = calcPFRThree(fullMonths, firstDay, numDaysInFstMonth, secondDay, numDaysInSndMonth);
+        }
+        return result;
+
+
+    }
+
+
+    function calcPFRFull(fullMonth) {
+        return 26545 / 12 * fullMonth;
+    }
+
+    function calcPFROne(fullMonth, fstMthDayDate, fstMthNumDays) {
+        return 26545 / 12 * fullMonth + 26545 / 12 * (fstMthNumDays - fstMthDayDate + 1) / fstMthNumDays;
+    }
+
+    function calcPFRTwo(fullMonth, sndMthDayDate, sndMthNumDays) {
+        return 26545 / 12 * fullMonth + 26545 / 12 * sndMthDayDate / sndMthNumDays;
+    }
+
+    function calcPFRThree(fullMonth, fstMthDayDate, fstMthNumDays, sndMthDayDate, sndMthNumDays) {
+        return 26545 / 12 * fullMonth + 26545 / 12 * (fstMthNumDays - fstMthDayDate + 1) / fstMthNumDays
+            + 26545 / 12 * sndMthDayDate / sndMthNumDays;
+    }
+
+
+    // Calculate situations for Medical fund:
+
+    function calculateFFOMS(date1, date2) {
+        var result;
+        var fullMonths = getFullMonthNumber(date1, date2);
+        var firstDay = getDay(date1);
+        var secondDay = getDay(date2);
+        var firstMonth = getMonth(date1);
+        var secondMonth = getMonth(date2);
+        var numDaysInFstMonth = getNumberOfDaysByMonth(firstMonth);
+        var numDaysInSndMonth = getNumberOfDaysByMonth(secondMonth);
+        if (fullMonths === 12) {
+            result = 5840;
+        } else if (firstDay === 1 && secondDay === getNumberOfDaysByMonth(secondMonth)) {
+            result = calcFFOMSFull(fullMonths);
+        } else if (firstDay !== 1 && secondDay === getNumberOfDaysByMonth(secondMonth)) {
+            result = calcFFOMSOne(fullMonths, firstDay, numDaysInFstMonth);
+        } else if (firstDay === 1 && secondDay !== getNumberOfDaysByMonth(secondMonth)) {
+            result = calcFFOMSTwo(fullMonths, secondDay, numDaysInSndMonth);
+        } else if (firstDay !== 1 && secondDay !== getNumberOfDaysByMonth(secondMonth)
+            || getFullMonthNumber(date1, date2) === 0) {
+            result = calcFFOMSThree(fullMonths, firstDay, numDaysInFstMonth, secondDay, numDaysInSndMonth);
+        }
+        return result;
+    }
+
+    function calcFFOMSFull(fullMonth) {
+        return 5840 / 12 * fullMonth;
+    }
+
+    function calcFFOMSOne(fullMonth, fstMthDayDate, fstMthNumDays) {
+        return 5840 / 12 * fullMonth + 5840 / 12 * fstMthDayDate / fstMthNumDays;
+    }
+
+    function calcFFOMSTwo(fullMonth, sndMthDayDate, sndMthNumDays) {
+        return fullMonth + 5840 / 12 * sndMthDayDate / sndMthNumDays;
+    }
+
+    function calcFFOMSThree(fullMonth, fstMthDayDate, fstMthNumDays, sndMthDayDate, sndMthNumDays) {
+        return 5840 / 12 * fullMonth + 5840 / 12 * (fstMthNumDays - fstMthDayDate + 1) / fstMthNumDays
+            + 5840 / 12 * sndMthDayDate / sndMthNumDays;
+    }
+
+
+    // Вычисление количества полных месяцев, исходя из дат.
+    function getFullMonthNumber(date1, date2) {
+        var firstDay = getDay(date1);
+        var secondDay = getDay(date2);
+        var firstMonth = getMonth(date1);
+        var secondMonth = getMonth(date2);
+
+        if (firstDay === 1 && secondDay === getNumberOfDaysByMonth(secondMonth)) return secondMonth - firstMonth + 1;
+        if (firstDay !== 1 && secondDay === getNumberOfDaysByMonth(secondMonth)) return secondMonth - firstMonth;
+        if (firstDay === 1 && secondDay !== getNumberOfDaysByMonth(secondMonth)) return secondMonth - firstMonth;
+        if (firstDay !== 1 && secondDay !== getNumberOfDaysByMonth(secondMonth)) return secondMonth - firstMonth - 1;
+        if (secondMonth - firstMonth - 1 <= 0) return 0;
+    }
+
+    // Смотрим, сколько дней в этом месяце (2018 год!!)
+    function getNumberOfDaysByMonth(numberOfMonth) {
+        if (numberOfMonth === 2) return 28;
+        if (numberOfMonth === 1 || 3 || 5 || 7 || 8 || 10 || 12) return 31;
+        else return 30;
+    }
+
+    // Берем день из строки.
+    function getDay(string) {
+        var number = string.substring(-3);
+        if (number.charAt(0) === 0) {
+            number.substring(1);
+        }
+        return parseInt(number);
+    }
+
+    // Вынимаем месяц из строки.
+    function getMonth(string) {
+        var number = string.substring(3);
+        if (number.charAt(0) === 0) {
+            number.substring(1);
+        }
+        return parseInt(number);
+    }
+</script>
+</body>
+</html>
